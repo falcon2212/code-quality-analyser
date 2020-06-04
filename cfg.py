@@ -13,100 +13,152 @@ class Cfg(object):
 	def __init__(self, ast):
 		self.node = CfgNode(entry = True)	
 		l = ast.ext
-		start = self.node
-		end = [start]
-		function_graph = {}
+		self.start = self.node
+		self.end = [self.start]
+		self.function_graph = {}
 		for i in l:
 			# print i.decl.name
-			st, en = self.function_build(i)
-			function_graph[c_generator.CGenerator().visit(i.decl)] = (st, en)
+			st, en, vertices, edges = self.function_build(i)
+			self.function_graph[c_generator.CGenerator().visit(i.decl)] = (st, en, vertices, edges)
 			if i.decl.name == "main":
-				start.adj_list.append(st)
-				end = en
+				self.start.adj_list.append(st)
+				self.end = en
+
 	def build_block(self, asst):
 		j = asst
+		vertices = 0
+		edges = 0
 		if(isinstance(j, pycparser.c_ast.While)):
-			# print "while"
-			# print c_generator.CGenerator().visit(j)
-			curr = CfgNode(get_source_string(j.cond))
-			st1, en1 =self.build_block(j.stmt)
+			curr = CfgNode("while "+get_source_string(j.cond))
+			vertices+=1
+			st1, en1, ver_res, edges_res =self.build_block(j.stmt)
+			# print vertices, edges
+			vertices += ver_res
+			edges += edges_res
 			curr.adj_list.append(st1)
+			edges+=1
 			end = en1
 			for i in end:
 				i.adj_list.append(curr)
+				edges+=1
 			end = [curr]
-			return (curr, end)	
+			return (curr, end, vertices, edges)	
 		elif isinstance(j, pycparser.c_ast.If):
-			# print "If block"
-			curr = CfgNode("if("+get_source_string(j.cond)+")")
+			curr = CfgNode("if "+get_source_string(j.cond))
 			end = []
 			# print j.iftrue	
-			st1, en1 =self.build_block(j.iftrue)
-			st1.statement = "{"+st1.statement
-			for i in en1:
-				i.statement = i.statement+"}"
+			vertices+=1
+			st1, en1, ver_res, edges_res =self.build_block(j.iftrue)
+			vertices+=ver_res
+			edges+=edges_res
 			curr.adj_list.append(st1)
+			edges+=1
 			end = end+en1
 			if(j.iffalse == None):	
 				end.append(curr)
 			else:
-				st2, en2 =self.build_block(j.iffalse)
+				st2, en2, ver_res, edges_res =self.build_block(j.iffalse)
+				vertices+=ver_res
+				edges+=edges_res
 				# print j.iffalse
 				st2.statement = "else "+st2.statement
 				# print  "else :sdf dsf ", st2.statement
+					# print i.statement,"sd"
 				curr.adj_list.append(st2)
+				edges+=1
 				end+=en2
-			return (curr, end)
+			return (curr, end, vertices, edges)	
 		elif isinstance(j, pycparser.c_ast.FuncCall):
 			# print "function call"		
-			curr = CfgNode(get_source_string(j))		
-			end = [curr]
-			return (curr, end)	
+			curr = CfgNode(get_source_string(j))	
+			end = CfgNode()	
+			curr.adj_list.append(end)
+			vertices+=2
+			edges+=1
+			end = [end]
+			return (curr, end, vertices, edges)	
 		elif isinstance(j, pycparser.c_ast.Decl):
 			# print "declaration"
-			curr = CfgNode(get_source_string(j))		
-			end = [curr]
-			return (curr, end)	
+			vertices+=2
+			curr = CfgNode(get_source_string(j))	
+			end = CfgNode()	
+			curr.adj_list.append(end)
+			end = [end]
+			edges+=1
+			return (curr, end, vertices, edges)	
 		elif isinstance(j, pycparser.c_ast.Assignment) or isinstance(j, pycparser.c_ast.EmptyStatement):
-			# print "assignment"		
-			curr = CfgNode(get_source_string(j))		
-			end = [curr]
-			return (curr, end)	
+			vertices=2
+			curr = CfgNode(get_source_string(j))	
+			end = CfgNode()	
+			curr.adj_list.append(end)
+			edges=1
+			end = [end]
+			return (curr, end, vertices, edges)	
 		elif isinstance(j, pycparser.c_ast.Return):
 			# print "return", get_source_string(j)		
-			curr = CfgNode(get_source_string(j))		
-			end = [curr]
-			return (curr, end)	
+			vertices+=2
+			curr = CfgNode(get_source_string(j))	
+			end = CfgNode()	
+			curr.adj_list.append(end)
+			edges+=1
+			end = [end]
+			return (curr, end, vertices, edges)	
 		elif isinstance(j, pycparser.c_ast.Compound):
-			# print "compound", get_source_string(j)		
-			curr = CfgNode(get_source_string(j))		
-			end = [curr]
-			return (curr, end)	
+			# print "compound", get_source_string(j),j
+			st, en, ver_res, edges_res = self.build_compound(j)		
+			# curr = CfgNode(get_source_string(j))	
+			# end = CfgNode()	
+			# curr.adj_list.append(end)
+			# end = [end]
+			vertices+=ver_res
+			edges+=edges_res
+			return (st, en, vertices, edges)	
 		else:
 			print "Invalid type"
 			# print type(j), get_source_string(j), j
-			return (-1, -1)
+			return (-1, -1, 0, 0)
 
 	def function_build(self,asst):
 		entry_node = CfgNode(get_source_string(asst.decl), entry = True)
+		vertices = 2
+		edges = 0
 		# asst.show()
-		st, en = self.build_compound(asst)
+		st, en,ver_res,edges_res = self.build_compound(asst.body)
 		entry_node.adj_list.append(st)
+		edges+=1
+		vertices+=ver_res
+		edges+=edges_res
+		exit_node = CfgNode(exit = False)
+		for i in en:
+			i.adj_list.append(exit_node)
+			edges+=1	
 		# print type(asst)
-		return (entry_node, en)
+		return (entry_node, exit_node, vertices, edges)
 	def build_compound(self, asst):	
 		curr = None
 		start = curr
 		endp = []	
-		for j in asst.body.block_items:
-			st, en = self.build_block(j)
+		vertices = 0
+		edges = 0
+		# print type(asst), asst
+		for j in asst.block_items:
+			# print j
+			st, en, ver_res, edges_res = self.build_block(j)
+			vertices+=ver_res
+			edges+=edges_res
 			if start == None:
 				start = st
+				endp = [start]
+				vertices+=1
 			for i in endp:
-				i.adj_list.append(st)	
+				i.adj_list.append(st)
+				edges+=1
 			endp = en
-		return (start, endp)	
-
+		return (start, endp, vertices, edges)	
+	def print_cyclomatic_complexity(self):
+		for i in self.function_graph:
+			st, en, v, e = self.function_graph[i]
+			print "Cyclomatic complexity of function '"+i+"' is = "+str(e-v+2)
 def dfs(node):
 	print node.statement
 	for i in node.adj_list:
@@ -114,4 +166,5 @@ def dfs(node):
 if(__name__ == "__main__"):
 	ast = parse_file("1.c", use_cpp=True)
 	cfg = Cfg(ast)
-	dfs(cfg.node)
+	cfg.print_cyclomatic_complexity()
+	# dfs(cfg.node)

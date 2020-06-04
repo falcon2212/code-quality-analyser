@@ -8,7 +8,7 @@ int fb( int par){
 		float flt;
 		lim = flt+2;
 		fa();
-		par++;
+		// par++;
 	}
 	lim+=10;
 	if(par > 10);
@@ -19,14 +19,48 @@ int fb( int par){
 	return  lim = par*200;
 }
 int main(){
-	int a = 1;
-	int b = fb(a)*fb(a);
-	fa();
-	if(par > 10);
-	else if(par < 5)
-		return par*100;
-	else
-		return par*200;
-	fb(b);
+	// int a = 1;
+	// int b = fb(a)*fb(a);
+	// fa();
+	if(par > 11){
+		a = a+b;
+	}
+	// else if(par < 5){
+	// 	if(2+2){
+	// 		return 4;
+	// 	}
+	// 	return par*100;
+	// }
+	// else{
+	// 	if(2+2){
+	// 		return 4;
+	// 	}
+	// }	
+	// 	return par*200;
+	// }
+	// fb(b);
+	while(par < lim) fb(b);
+	while(par < lim) fb(b);
+	while(par < lim) fb(b);
+	// while(par < lim){
+	// while(par < lim){
+	// 	float flt;
+	// 	lim = flt+2;
+	// 	fa();
+	// 	// par++;
+	// }
+
+	// 	float flt;
+	// 	lim = flt+2;
+	// 	fa();
+	// 	// par++;
+	// }
+		
+	// 	float flt;
+	// 	lim = flt+2;
+	// 	fa();
+	// 	// par++;
+	// }
 	return 0;
 }
+// 
